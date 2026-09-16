@@ -185,14 +185,17 @@ class _NeedCard extends StatelessWidget {
                               .onSurface
                               .withValues(alpha: 0.72))),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 0,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Chip(
                         label: Text(_freqLabel(need.frequency)),
                         visualDensity: VisualDensity.compact,
                         backgroundColor: AppColors.meadow,
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       TextButton.icon(
                         onPressed: () => QuickLogSheet.show(
                           context,

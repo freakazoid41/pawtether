@@ -1,4 +1,4 @@
-package com.pawtether.pawtether
+package com.paw.tether
 
 import io.flutter.embedding.android.FlutterActivity
 

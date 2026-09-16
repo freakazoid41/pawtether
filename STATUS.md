@@ -470,8 +470,17 @@
   line already covers PawTether. Removed the subpath copy from the project
   repo (never crawled, only confusing). NOTHING to add anywhere.
 - Play listing Website MUST be `https://freakazoid41.github.io` (root).
-  If AdMob ever flags auth, append the documented cert-ID twin line
-  `google.com, pub-1088997129209291, DIRECT, f5cf6f5d4d1f3aa0` to the root.
+- Done p52: appended the documented cert-ID twin
+  (`... DIRECT, f5cf6f5d4d1f3aa0`) to the root file — both lines live,
+  curl-verified. Either ID alone would do; now bulletproof.
+
+## Work (2026-09-16 p53, privacy policy per console screenshot)
+- Drafted TR+EN policy true to the app (offline-first, AdMob disclosure,
+  local notifications, permission purposes, under-13, contact placeholder)
+  → `privacy.html` on the Pages site, HTTP 200 verified:
+  `https://freakazoid41.github.io/privacy.html` — paste into console.
+- TODO: user must supply the real contact email (page shows
+  PAWTETHER_CONTACT_EMAIL until then).
 
 ## Audit + store prep (2026-09-16 p49, careful pass per user)
 - Baseline: 16 info, 34/34, i18n 313 perfect. Rejected 2 audit claims w/

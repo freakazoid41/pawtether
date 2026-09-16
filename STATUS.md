@@ -458,6 +458,21 @@
   zero load failures. Deploy pid 16666.
 - TODO production: flip `AdIds.homeBanner` to `.../4899027866`.
 
+## Work (2026-09-16 p50, source to GitHub per user)
+- Repo initialized, 248 files, pushed to
+  `https://github.com/freakazoid41/pawtether.git` (was empty, now `main`).
+- `.gitignore` hardened (keystore/key.properties/build excluded — verified
+  absent from remote).
+
+## Fix (2026-09-16 p51, app-ads.txt placement per user)
+- User's Pages root ALREADY serves `/app-ads.txt` with their pub ID
+  (`...f08c47fec0942fa0`, same account) — one domain = one file, and that
+  line already covers PawTether. Removed the subpath copy from the project
+  repo (never crawled, only confusing). NOTHING to add anywhere.
+- Play listing Website MUST be `https://freakazoid41.github.io` (root).
+  If AdMob ever flags auth, append the documented cert-ID twin line
+  `google.com, pub-1088997129209291, DIRECT, f5cf6f5d4d1f3aa0` to the root.
+
 ## Audit + store prep (2026-09-16 p49, careful pass per user)
 - Baseline: 16 info, 34/34, i18n 313 perfect. Rejected 2 audit claims w/
   evidence (tz `_zoned` proven by 09:00 alarm dump; midnight routine edge

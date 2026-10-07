@@ -18,9 +18,8 @@ class DocumentsScreen extends StatelessWidget {
   Future<void> _pickFile(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     final app = context.read<AppProvider>();
-    final result = await FilePicker.pickFiles();
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.single;
+    final file = await FilePicker.pickFile();
+    if (file == null) return;
     if (file.path == null) return;
     String stored;
     try {

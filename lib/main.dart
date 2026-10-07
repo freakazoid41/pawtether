@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,9 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Android 15+ (SDK 35) enforces edge-to-edge. Draw behind status/nav bars
+  // and let SafeArea / Scaffold handle insets on every screen.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await EasyLocalization.ensureInitialized();
   // Ads are best-effort: never block boot.
   try {

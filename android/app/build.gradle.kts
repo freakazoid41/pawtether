@@ -54,6 +54,14 @@ android {
 
     buildTypes {
         release {
+            // R8 full-mode optimization + unused resource removal.
+            // (Play's "R8 optimization" recommendation.)
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
@@ -70,4 +78,6 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Needed for WindowCompat.enableEdgeToEdge() in MainActivity (SDK 35+).
+    implementation("androidx.core:core:1.15.0")
 }

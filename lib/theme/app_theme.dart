@@ -6,7 +6,6 @@ class AppColors {
   static const Color secondary = Color(0xFF6EC6A1); // sage green
   static const Color accent = Color(0xFFFFB457); // amber honey
   static const Color honey = Color(0xFFFFC46B);
-  static const Color blush = Color(0xFFFFD9CE); // soft peach
   static const Color meadow = Color(0xFFDFF3E4); // soft mint
   static const Color cream = Color(0xFFFFF6EC);
   static const Color bg = Color(0xFFFFFAF3);

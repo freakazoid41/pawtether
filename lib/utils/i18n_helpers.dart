@@ -176,8 +176,13 @@ String petAgeTr(Pet pet) {
     years--;
   }
   if (years < 1) {
-    final months = (now.year - b.year) * 12 + (now.month - b.month);
+    // Day-of-month aware: born Jan 31, today Feb 1 is 0 months, not 1.
+    // Future dates (legacy rows) clamp to 0, never negative.
+    var months = (now.year - b.year) * 12 + (now.month - b.month);
+    if (now.day < b.day) months--;
+    if (months < 0) months = 0;
     return 'age_months'.tr(namedArgs: {'count': '$months'});
   }
+  if (years < 0) years = 0;
   return 'age_years'.tr(namedArgs: {'count': '$years'});
 }

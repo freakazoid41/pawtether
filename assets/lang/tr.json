@@ -88,6 +88,8 @@
   "form_invalid": "Lütfen alanları kontrol et.",
   "spc_already": "Zaten kaydedildi.",
   "doc_no_preview": "Bu dosya için önizleme yok — kasada güvende duruyor.",
+  "doc_open_with": "Başka uygulamayla aç",
+  "doc_open_failed": "Dosya açılamadı — görüntüleyici bir uygulama yüklü mü?",
   "chart_empty_weight": "Henüz kilo verisi yok. Trendi görmek için kilo kaydet.",
   "onboarding_skip": "Şimdilik geç",
   "common_delete": "Sil",

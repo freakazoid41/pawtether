@@ -25,15 +25,28 @@ class AppDatabase {
 
   Future<void> init() async {
     await Hive.initFlutter('pawtether');
-    pets = await Hive.openBox<dynamic>(_petBox);
-    records = await Hive.openBox<dynamic>(_recordBox);
-    logs = await Hive.openBox<dynamic>(_logBox);
-    reminders = await Hive.openBox<dynamic>(_reminderBox);
-    docs = await Hive.openBox<dynamic>(_docBox);
-    expenses = await Hive.openBox<dynamic>(_expenseBox);
-    routines = await Hive.openBox<dynamic>(_routineBox);
-    qrCodes = await Hive.openBox<dynamic>(_qrBox);
-    settings = await Hive.openBox<dynamic>(_settingsBox);
+    // Open all boxes in parallel — sequential opens were adding
+    // ~1s+ to every cold start on slower devices.
+    final opened = await Future.wait([
+      Hive.openBox<dynamic>(_petBox),
+      Hive.openBox<dynamic>(_recordBox),
+      Hive.openBox<dynamic>(_logBox),
+      Hive.openBox<dynamic>(_reminderBox),
+      Hive.openBox<dynamic>(_docBox),
+      Hive.openBox<dynamic>(_expenseBox),
+      Hive.openBox<dynamic>(_routineBox),
+      Hive.openBox<dynamic>(_qrBox),
+      Hive.openBox<dynamic>(_settingsBox),
+    ]);
+    pets = opened[0];
+    records = opened[1];
+    logs = opened[2];
+    reminders = opened[3];
+    docs = opened[4];
+    expenses = opened[5];
+    routines = opened[6];
+    qrCodes = opened[7];
+    settings = opened[8];
   }
 
   /* ---------- Pets ---------- */
@@ -96,7 +109,8 @@ class AppDatabase {
   List<Map<String, dynamic>> logsFor(String petId) {
     final list = (logs.get(petId) as List?) ?? const [];
     return list
-        .map((e) => Map<String, dynamic>.from(e as Map))
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
         .toList();
   }
 
@@ -163,8 +177,6 @@ class AppDatabase {
   }
 
   /* ---------- Settings ---------- */
-  String? getString(String key) => settings.get(key) as String?;
-  void setString(String key, String value) => settings.put(key, value);
   Object? getObject(String key) => settings.get(key);
   void setObject(String key, Object value) => settings.put(key, value);
 

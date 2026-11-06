@@ -166,7 +166,7 @@ class _PetSwitcher extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: pets.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final p = pets[i];
                 final selected = current.id == p.id;
@@ -451,7 +451,7 @@ class _QuickLogGrid extends StatelessWidget {
                             cacheWidth: 136,
                             cacheHeight: 136,
                             fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => Text(t.icon,
+                            errorBuilder: (_, _, _) => Text(t.icon,
                                 style: const TextStyle(fontSize: 30)),
                           ),
                           if (isDone)

@@ -10,11 +10,9 @@ import 'package:pawtether/providers/app_provider.dart';
 import 'package:pawtether/storage/app_database.dart';
 import 'package:pawtether/theme/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:pawtether/screens/add_pet.dart';
 import 'package:pawtether/screens/calendar_screen.dart';
 import 'package:pawtether/screens/home_shell.dart';
 import 'package:pawtether/screens/pet_detail.dart';
-import 'package:pawtether/screens/routines_screen.dart';
 
 /// Store screenshot studio: seeds demo data, pumps real screens in
 /// tr/en/ru, saves shots via takeScreenshot.

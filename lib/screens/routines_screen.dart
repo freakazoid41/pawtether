@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -53,12 +55,12 @@ class RoutinesScreen extends StatelessWidget {
   }
 
   void _showForm(BuildContext context, AppProvider app, CareRoutine? existing) {
-    showModalBottomSheet(
+    unawaited(showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => RoutineFormSheet(pet: pet, existing: existing),
-    );
+    ));
   }
 }
 

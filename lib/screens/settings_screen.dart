@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -190,9 +192,9 @@ class SettingsScreen extends StatelessWidget {
             title: 'settings_notifications'.tr(),
             trailing: Switch(
               value: app.notificationsEnabled,
-              onChanged: (v) => context
+              onChanged: (v) => unawaited(context
                   .read<AppProvider>()
-                  .setNotificationsEnabled(v),
+                  .setNotificationsEnabled(v)),
             ),
           ),
           const SizedBox(height: 24),
@@ -360,6 +362,8 @@ class _LanguageDropdown extends StatelessWidget {
     'tr': 'Türkçe',
     'ru': 'Русский',
     'hi': 'हिन्दी',
+    'es': 'Español',
+    'de': 'Deutsch',
   };
 
   @override

@@ -74,7 +74,7 @@ class PetAvatar extends StatelessWidget {
               fit: BoxFit.cover,
               cacheWidth: (radius * 4).toInt(),
               cacheHeight: (radius * 4).toInt(),
-              errorBuilder: (_, __, ___) => _emojiAvatar(emoji, radius),
+              errorBuilder: (_, _, _) => _emojiAvatar(emoji, radius),
             ),
           )
         : _emojiAvatar(emoji, radius);
@@ -124,7 +124,7 @@ class SectionHeader extends StatelessWidget {
             child: Text(title,
                 style: Theme.of(context).textTheme.titleMedium),
           ),
-          if (trailing != null) trailing!,
+          trailing ?? const SizedBox.shrink(),
         ],
       ),
     );

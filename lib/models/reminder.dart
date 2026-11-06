@@ -75,26 +75,34 @@ class Reminder {
   }
 
   /// Next firing strictly after now (null = one-time already past).
+  /// Daily/weekly use date arithmetic instead of day-by-day loops so even
+  /// ancient start dates resolve in O(1); result is always > now.
   DateTime? nextOccurrence({DateTime? from}) {
     final now = from ?? DateTime.now();
     if (repeat == RepeatRule.none) {
       return date.isAfter(now) ? date : null;
     }
+    final at = DateTime(
+        date.year, date.month, date.day, date.hour, date.minute);
     if (repeat == RepeatRule.daily) {
-      var d = DateTime(date.year, date.month, date.day, date.hour, date.minute);
-      var guard = 0;
-      while (!d.isAfter(now) && guard++ < 800) {
-        d = d.add(const Duration(days: 1));
-      }
-      return d;
+      if (at.isAfter(now)) return at;
+      final days = now.difference(_dayOf(at)).inDays + 1;
+      final d = _dayOf(at).add(Duration(days: days));
+      final next = DateTime(
+          d.year, d.month, d.day, date.hour, date.minute);
+      return next.isAfter(now)
+          ? next
+          : next.add(const Duration(days: 1));
     }
     if (repeat == RepeatRule.weekly) {
-      var d = DateTime(date.year, date.month, date.day, date.hour, date.minute);
-      var guard = 0;
-      while (!d.isAfter(now) && guard++ < 120) {
-        d = d.add(const Duration(days: 7));
-      }
-      return d;
+      if (at.isAfter(now)) return at;
+      final weeks = now.difference(_dayOf(at)).inDays ~/ 7 + 1;
+      final d = _dayOf(at).add(Duration(days: weeks * 7));
+      final next = DateTime(
+          d.year, d.month, d.day, date.hour, date.minute);
+      return next.isAfter(now)
+          ? next
+          : next.add(const Duration(days: 7));
     }
     var y = date.year;
     var m = date.month;
@@ -114,6 +122,9 @@ class Reminder {
       }
       d = occ(y, m);
     }
+    // Guard tripped (decades-overdue start): never hand the scheduler a
+    // past date — it would fire instantly or throw and wipe the schedule.
+    if (!d.isAfter(now)) return now.add(const Duration(minutes: 1));
     return d;
   }
 

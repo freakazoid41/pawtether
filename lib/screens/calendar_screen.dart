@@ -344,7 +344,7 @@ class _ReminderRow extends StatelessWidget {
       title: Text(seedTr(reminder.title),
           style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(
-        '${pet?.name ?? 'cal_unknown_pet'.tr()} · ${DateFormat.Hm().format(reminder.date)}',
+        '${pet?.name ?? 'cal_unknown_pet'.tr()} · ${DateFormat.Hm().format(reminder.date)}${reminder.note.isNotEmpty ? '\n${reminder.note}' : ''}',
       ),
       trailing: IconButton(
         icon: const Icon(AppIcons.checkCircle,

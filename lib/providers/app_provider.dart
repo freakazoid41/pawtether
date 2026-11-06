@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../data/care_templates.dart';
@@ -22,8 +25,6 @@ class AppProvider extends ChangeNotifier {
   final Map<String, List<Expense>> _expenses = {};
   final Map<String, List<CareRoutine>> _routines = {};
   Map<String, dynamic> _qrKnowledge = {};
-
-  bool initialized = false;
 
   AppProvider(this._db);
 
@@ -60,7 +61,10 @@ class AppProvider extends ChangeNotifier {
     for (final pet in _pets) {
       out.addAll(_reminders[pet.id] ?? const []);
     }
-    out.sort((a, b) => a.date.compareTo(b.date));
+    // Sort by next firing, not by stale creation date — a daily reminder
+    // from 2023 fires today and must not sort above tomorrow's one-timer.
+    DateTime key(Reminder r) => r.nextOccurrence() ?? r.date;
+    out.sort((a, b) => key(a).compareTo(key(b)));
     return out;
   }
 
@@ -148,6 +152,14 @@ class AppProvider extends ChangeNotifier {
   }
 
   void updatePet(Pet pet) {
+    // Avatar replaced? Free the superseded file, don't orphan it.
+    for (final p in _pets) {
+      if (p.id == pet.id &&
+          p.imagePath.isNotEmpty &&
+          p.imagePath != pet.imagePath) {
+        _deleteFileQuietly(p.imagePath);
+      }
+    }
     _db.putPet(pet.toMap());
     final i = _pets.indexWhere((p) => p.id == pet.id);
     if (i >= 0) _pets[i] = pet;
@@ -155,6 +167,12 @@ class AppProvider extends ChangeNotifier {
   }
 
   void deletePet(Pet pet) {
+    // Free the vault: Hive rows alone would orphan avatar + doc files
+    // in app-private storage forever.
+    _deleteFileQuietly(pet.imagePath);
+    for (final d in _docs[pet.id] ?? const <MedicalDocument>[]) {
+      _deleteFileQuietly(d.filePath);
+    }
     _db.deletePet(pet.id);
     _pets.removeWhere((p) => p.id == pet.id);
     for (final box in [
@@ -167,7 +185,7 @@ class AppProvider extends ChangeNotifier {
       _currentPetId = _pets.isEmpty ? null : _pets.first.id;
     }
     notifyListeners();
-    refreshNotifications();
+    unawaited(refreshNotifications());
   }
 
   void setCurrentPet(String? id) {
@@ -180,7 +198,7 @@ class AppProvider extends ChangeNotifier {
     _db.addRecord(pet.id, 'vaccine', v.toMap());
     (_vaccines[pet.id] ??= []).insert(0, v);
     notifyListeners();
-    refreshNotifications();
+    unawaited(refreshNotifications());
   }
 
   void updateVaccine(Pet pet, Vaccine v) {
@@ -284,7 +302,7 @@ class AppProvider extends ChangeNotifier {
     _db.addReminder(pet.id, r.toMap());
     (_reminders[pet.id] ??= []).add(r);
     notifyListeners();
-    refreshNotifications();
+    unawaited(refreshNotifications());
   }
 
   void updateReminder(Pet pet, Reminder r) {
@@ -293,14 +311,14 @@ class AppProvider extends ChangeNotifier {
     final i = list.indexWhere((x) => x.id == r.id);
     if (i >= 0) list[i] = r;
     notifyListeners();
-    refreshNotifications();
+    unawaited(refreshNotifications());
   }
 
   void deleteReminder(Pet pet, Reminder r) {
     _db.deleteReminder(pet.id, r.id);
     _reminders[pet.id]?.removeWhere((x) => x.id == r.id);
     notifyListeners();
-    refreshNotifications();
+    unawaited(refreshNotifications());
   }
 
   /// Marks a reminder done: one-time reminders are removed, repeating ones
@@ -326,9 +344,29 @@ class AppProvider extends ChangeNotifier {
   }
 
   void deleteDoc(Pet pet, MedicalDocument doc) {
+    _deleteFileQuietly(doc.filePath);
     _db.deleteDoc(pet.id, doc.id);
     _docs[pet.id]?.removeWhere((x) => x.id == doc.id);
     notifyListeners();
+  }
+
+  /// Orphan-row fallback: vault rows whose pet is gone (deleted while the
+  /// vault was open, legacy rows) are otherwise undiscoverable AND
+  /// undeletable. Deletes by raw petId straight from the database.
+  void deleteOrphanDoc(MedicalDocument doc) {
+    _deleteFileQuietly(doc.filePath);
+    _db.deleteDoc(doc.petId, doc.id);
+    _docs[doc.petId]?.removeWhere((x) => x.id == doc.id);
+    notifyListeners();
+  }
+
+  /// Best-effort vault file delete. Never throws, never blocks UI.
+  void _deleteFileQuietly(String path) {
+    if (path.isEmpty) return;
+    try {
+      final f = File(path);
+      if (f.existsSync()) f.deleteSync();
+    } catch (_) {}
   }
 
   // ---------- Expenses ----------
@@ -401,7 +439,29 @@ class AppProvider extends ChangeNotifier {
     await refreshNotifications();
   }
 
+  // Serializes concurrent refreshes (addPet seeding fires ~6 at once).
+  // Without this, interleaved cancelAll → schedule → cancelAll races left
+  // partial or empty schedules. Extra triggers coalesce into one rerun.
+  bool _refreshing = false;
+  bool _refreshQueued = false;
+
   Future<void> refreshNotifications() async {
+    if (_refreshing) {
+      _refreshQueued = true;
+      return;
+    }
+    _refreshing = true;
+    try {
+      do {
+        _refreshQueued = false;
+        await _refreshNotificationsNow();
+      } while (_refreshQueued);
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  Future<void> _refreshNotificationsNow() async {
     if (!notificationsEnabled) {
       try {
         await NotificationService.instance.cancelAll();
@@ -410,15 +470,33 @@ class AppProvider extends ChangeNotifier {
       }
       return;
     }
+    // Single cancel-then-schedule pass: one scheduler throwing must not
+    // wipe the slots the others already filled.
     try {
-      final all = remindersForAll();
+      await NotificationService.instance.cancelAll();
+    } catch (e) {
+      debugPrint('Notifications cancel failed: $e');
+    }
+    try {
       final names = {for (final p in _pets) p.id: p.name};
       await NotificationService.instance.scheduleDailyFeedNudges(_pets);
+      final all = remindersForAll();
       await NotificationService.instance
           .scheduleReminderOccurrences(all, names);
-      await NotificationService.instance.scheduleOverdueNudge(all);
+      await _maybeOverdueNudge(all);
     } catch (e) {
       debugPrint('Notifications refresh failed: $e');
     }
+  }
+
+  /// Overdue heads-up at most once per day. refreshNotifications runs on
+  /// every CRUD tap — without this, one overdue vaccine spammed a popup
+  /// on each of the 6 seed writes plus every later edit.
+  Future<void> _maybeOverdueNudge(List<Reminder> all) async {
+    final now = DateTime.now();
+    final stamp = '${now.year}-${now.month}-${now.day}';
+    if ((_db.getObject('overdue_nudge_day') as String?) == stamp) return;
+    await NotificationService.instance.scheduleOverdueNudge(all);
+    _db.setObject('overdue_nudge_day', stamp);
   }
 }

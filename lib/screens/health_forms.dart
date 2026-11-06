@@ -421,7 +421,7 @@ Future<SymptomEntry?> symptomSheet(BuildContext context, String petId) {
             return IconButton(
               onPressed: () => setState(() => severity = i + 1),
               icon: Icon(
-                i < severity ? AppIcons.heart : AppIcons.heart,
+                AppIcons.heart,
                 color: filled ? Colors.redAccent : Colors.grey,
               ),
             );

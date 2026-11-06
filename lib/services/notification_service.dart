@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -21,8 +22,21 @@ class NotificationService {
   bool _ready = false;
   bool get isReady => _ready;
 
+  /// True once the IANA zone resolved. Until then _zoned falls back to an
+  /// instant conversion (correct wall time, DST-safe at schedule time).
+  bool _tzOk = false;
+
   Future<void> init() async {
     tzdata.initializeTimeZones();
+    // Pin tz.local to the real device zone. Without this tz.local parks on
+    // UTC and every 9am nudge / reminder fired offset by hours (worse at DST).
+    try {
+      final zone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(zone.identifier));
+      _tzOk = true;
+    } catch (e) {
+      debugPrint('tz zone lookup failed, using UTC instants: $e');
+    }
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwin = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -66,12 +80,22 @@ class NotificationService {
   }
 
   /// Converts a device-local wall time to a scheduler instant.
-  tz.TZDateTime _zoned(DateTime local) => tz.TZDateTime.from(local, tz.UTC);
+  /// With tz.local pinned to the device zone this is DST-correct;
+  /// pre-init fallback converts the instant (never reinterprets wall as UTC).
+  tz.TZDateTime _zoned(DateTime local) {
+    if (_tzOk) {
+      return tz.TZDateTime(tz.local, local.year, local.month, local.day,
+          local.hour, local.minute, local.second);
+    }
+    return tz.TZDateTime.from(local.toUtc(), tz.UTC);
+  }
 
   /// Schedules one daily 9am nudge per pet. Call on boot + pet add/delete.
+  /// NOTE: no cancelAll here — AppProvider.refreshNotifications owns the
+  /// single cancel-then-schedule pass so concurrent refreshes can't wipe
+  /// each other's slots.
   Future<void> scheduleDailyFeedNudges(List<Pet> pets) async {
     if (!_ready) return;
-    await _plugin.cancelAll();
     var id = 100;
     for (final pet in pets) {
       await _plugin.zonedSchedule(

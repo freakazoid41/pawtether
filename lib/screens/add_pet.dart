@@ -68,8 +68,15 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final path = await ImageHelper.pickAndStore();
-    if (path != null) setState(() => _imagePath = path);
+    String? path;
+    try {
+      path = await ImageHelper.pickAndStore();
+    } catch (e) {
+      debugPrint('Photo pick failed: $e');
+      return;
+    }
+    if (!mounted || path == null) return;
+    setState(() => _imagePath = path);
   }
 
   Future<void> _pickBirthday() async {
@@ -79,7 +86,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
       firstDate: DateTime(1990),
       lastDate: DateTime.now(),
     );
-    if (d != null) setState(() => _birthday = d);
+    if (!mounted || d == null) return;
+    setState(() => _birthday = d);
   }
 
   void _save() {
@@ -143,7 +151,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                           fit: BoxFit.cover,
                           cacheWidth: 220,
                           cacheHeight: 220,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (_, _, _) => Container(
                             width: 110,
                             height: 110,
                             decoration: const BoxDecoration(
@@ -184,7 +192,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                                     width: 110,
                                     height: 110,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Text(emoji,
+                                    errorBuilder: (_, _, _) => Text(emoji,
                                         style: const TextStyle(fontSize: 44)),
                                   ),
                                 ),
@@ -465,7 +473,7 @@ class _SpeciesSelector extends StatelessWidget {
                           cacheWidth: 144,
                           cacheHeight: 144,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => Text(emoji,
+                          errorBuilder: (_, _, _) => Text(emoji,
                               style: const TextStyle(fontSize: 40)),
                         ),
                       ),

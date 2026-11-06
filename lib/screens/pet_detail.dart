@@ -98,6 +98,8 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             ),
           ],
           bottom: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
             unselectedLabelColor:
@@ -364,7 +366,9 @@ class _Health extends StatelessWidget {
                             subtitle: _dateLabel(v.date) +
                                 (v.nextDue == null
                                     ? ''
-                                    : ' · ${'pd_boost_due'.tr(namedArgs: {'date': _dateLabel(v.nextDue!)})}'),
+                                    : ' · ${'pd_boost_due'.tr(namedArgs: {'date': _dateLabel(v.nextDue!)})}') +
+                                (v.vet.isNotEmpty ? '\n👨‍⚕️ ${v.vet}' : '') +
+                                (v.notes.isNotEmpty ? '\n${v.notes}' : ''),
                             onDelete: () =>
                                 context.read<AppProvider>().deleteVaccine(pet, v),
                           ))
@@ -390,7 +394,7 @@ class _Health extends StatelessWidget {
                             color: const Color(0xFF7C4DFF),
                             title: m.name,
                             subtitle:
-                                '${m.dosage.isNotEmpty ? m.dosage + ' · ' : ''}${_freqTr(m.frequency)}',
+                                '${m.dosage.isNotEmpty ? '${m.dosage} · ' : ''}${_freqTr(m.frequency)}${m.notes.isNotEmpty ? '\n${m.notes}' : ''}',
                             onDelete: () =>
                                 context.read<AppProvider>().deleteMedication(pet, m),
                           ))
@@ -419,7 +423,11 @@ class _Health extends StatelessWidget {
                                 (v.vetName.isNotEmpty ? ' · ${v.vetName}' : '') +
                                 (v.cost > 0
                                     ? ' · ${_money(v.cost)}'
-                                    : ''),
+                                    : '') +
+                                (v.diagnosis.isNotEmpty
+                                    ? '\n🩺 ${v.diagnosis}'
+                                    : '') +
+                                (v.notes.isNotEmpty ? '\n${v.notes}' : ''),
                             onDelete: () =>
                                 context.read<AppProvider>().deleteVisit(pet, v),
                             onTap: () async {
@@ -454,7 +462,8 @@ class _Health extends StatelessWidget {
                             icon: AppIcons.scale,
                             color: AppColors.accent,
                             title: '${w.weight} ${'unit_kg'.tr()}',
-                            subtitle: _dateLabel(w.date),
+                            subtitle: _dateLabel(w.date) +
+                                (w.notes.isNotEmpty ? '\n${w.notes}' : ''),
                             onDelete: () => context
                                 .read<AppProvider>()
                                 .deleteWeight(pet, w),
@@ -481,8 +490,7 @@ class _Health extends StatelessWidget {
                             icon: AppIcons.heart,
                             color: _severityColor(s.severity),
                             title: s.symptom,
-                            subtitle: _dateLabel(s.date) +
-                                ' · ${'pd_severity'.tr(namedArgs: {'s': '${s.severity}'})}',
+                            subtitle: '${_dateLabel(s.date)} · ${'pd_severity'.tr(namedArgs: {'s': '${s.severity}'})}${s.notes.isNotEmpty ? '\n${s.notes}' : ''}',
                             onDelete: () => context
                                 .read<AppProvider>()
                                 .deleteSymptom(pet, s),
@@ -759,7 +767,7 @@ class _ExpensesCard extends StatelessWidget {
                     title: Text(_expenseTitle(e),
                         style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(
-                        '${DateFormat('d MMM').format(e.date)} · ${expenseCatTr(e.category)}'),
+                        '${DateFormat('d MMM').format(e.date)} · ${expenseCatTr(e.category)}${e.notes.isNotEmpty ? '\n${e.notes}' : ''}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -939,4 +947,4 @@ String _dateLabel(DateTime d) => DateFormat('d MMM yyyy').format(d);
 String _freqTr(String f) => f == 'Daily' ? 'remrep_daily'.tr() : f;
 
 String _money(double v) =>
-    NumberFormat.simpleCurrency().format(v);
+    NumberFormat.simpleCurrency(locale: Intl.defaultLocale).format(v);

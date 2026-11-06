@@ -167,7 +167,7 @@ class ActivityChart extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      DateFormat('d/M').format(day),
+                      DateFormat.Md().format(day),
                       style: const TextStyle(
                           fontSize: 8, color: AppColors.muted),
                     ),

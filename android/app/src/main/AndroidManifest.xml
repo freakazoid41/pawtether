@@ -2,6 +2,12 @@
     <!-- Release needs these (debug manifest has its own copy — main had none). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Android 13+ notification runtime permission (also requested in-app).
+         Declared explicitly so R8 manifest merging never drops it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Reserved for the planned boot-reschedule receiver: scheduled
+         notifications do not survive reboot until it lands. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:label="PawTether"
         android:name="${applicationName}"

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 /// AdMob IDs — Android is REAL production, iOS still Google TEST ids.
 /// Swap iOS when its keys exist.
 class AdIds {
@@ -11,6 +13,10 @@ class AdIds {
       // REAL app ID (Android).
       : 'ca-app-pub-1088997129209291~3718255248';
 
-  /// TEST banner until production (real unit gets no fill yet).
-  static const String homeBanner = 'ca-app-pub-3940256099942544/6300978111';
+  /// Debug builds use Google's TEST banner so development never
+  /// generates invalid traffic. Release builds use the REAL unit —
+  /// shipping test ads to users earns zero revenue and risks policy flags.
+  static String get homeBanner => kDebugMode
+      ? 'ca-app-pub-3940256099942544/6300978111'
+      : 'ca-app-pub-1088997129209291/4899027866';
 }

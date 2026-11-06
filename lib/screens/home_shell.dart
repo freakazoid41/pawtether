@@ -29,9 +29,13 @@ class _HomeShellState extends State<HomeShell> {
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       // Rounded top corners so the bar reads as one of the cozy cards.
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        child: NavigationBar(
+      // SafeArea keeps the bar clear of the Android 15 gesture handle.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: ClipRRect(
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(28)),
+          child: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: [
@@ -58,6 +62,7 @@ class _HomeShellState extends State<HomeShell> {
             label: 'nav_more'.tr(),
           ),
         ],
+        ),
         ),
       ),
     );

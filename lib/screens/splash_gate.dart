@@ -20,7 +20,11 @@ class _SplashGateState extends State<SplashGate> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1400), () {
+    // No artificial hold: the native Android 12+ splash already branded
+    // the launch. Push the real screen on the first frame so daily
+    // check-ins feel instant. A fixed 1400ms delay here was the #1
+    // "app holds for seconds" complaint.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final app = context.read<AppProvider>();
       Navigator.of(context).pushReplacement(MaterialPageRoute(

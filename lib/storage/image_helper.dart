@@ -33,7 +33,8 @@ class ImageHelper {
     if (!await mediaDir.exists()) {
       await mediaDir.create(recursive: true);
     }
-    final safe = fileName.replaceAll(RegExp(r'[^\w\-. ]+'), '_');
+    final safe = fileName.replaceAll(
+        RegExp(r'[^\p{L}\p{N}\-. ]+', unicode: true), '_');
     final target = '${mediaDir.path}/${const Uuid().v4()}_$safe';
     await File(srcPath).copy(target);
     return target;

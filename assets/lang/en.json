@@ -88,6 +88,8 @@
   "form_invalid": "Please check the highlighted fields.",
   "spc_already": "Already logged.",
   "doc_no_preview": "Preview isn't available for this file — it stays safe in the vault.",
+  "doc_open_with": "Open with another app",
+  "doc_open_failed": "Couldn't open this file — is a viewer app installed?",
   "chart_empty_weight": "No weight data yet. Log a weight to see the trend.",
   "onboarding_skip": "Skip for now",
   "common_delete": "Delete",

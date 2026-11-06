@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -75,6 +77,8 @@ class OnboardingScreen extends StatelessWidget {
                     ('tr', 'Türkçe'),
                     ('ru', 'Русский'),
                     ('hi', 'हिन्दी'),
+                    ('es', 'Español'),
+                    ('de', 'Deutsch'),
                   ])
                     _LangPill(
                       label: loc.$2,
@@ -104,10 +108,10 @@ class OnboardingScreen extends StatelessWidget {
                     if (added == true &&
                         context.mounted &&
                         context.read<AppProvider>().hasPets) {
-                      Navigator.of(context).pushReplacement(
+                      unawaited(Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
                             builder: (_) => const OnboardingDone()),
-                      );
+                      ));
                     }
                   },
                   child: Text('onboarding_add_first'.tr(),

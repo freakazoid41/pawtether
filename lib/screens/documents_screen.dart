@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:provider/provider.dart';
 
 import '../models/models.dart';
@@ -16,25 +17,41 @@ class DocumentsScreen extends StatelessWidget {
   const DocumentsScreen({super.key});
 
   Future<void> _pickFile(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
     final app = context.read<AppProvider>();
-    final file = await FilePicker.pickFile();
-    if (file == null) return;
+    PlatformFile file;
+    try {
+      final picked = await FilePicker.pickFile();
+      if (picked == null) return;
+      file = picked;
+    } catch (e) {
+      debugPrint('File pick failed: $e');
+      return;
+    }
+    if (!context.mounted) return;
     if (file.path == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     String stored;
     try {
       stored = await ImageHelper.storeFile(file.path!, file.name);
-    } catch (_) {
-      stored = file.path!;
+    } catch (e) {
+      debugPrint('File store failed: $e');
+      return;
     }
+    if (!context.mounted) return;
     _saveDoc(messenger, app, stored, file.name);
   }
 
   Future<void> _pickImage(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
     final app = context.read<AppProvider>();
-    final path = await ImageHelper.pickAndStore();
-    if (path == null) return;
+    late final String? path;
+    try {
+      path = await ImageHelper.pickAndStore();
+    } catch (e) {
+      debugPrint('Image pick failed: $e');
+      return;
+    }
+    if (path == null || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
     _saveDoc(messenger, app, path, ImageHelper.baseName(path));
   }
 
@@ -109,7 +126,7 @@ class DocumentsScreen extends StatelessWidget {
                               fit: BoxFit.cover,
                               cacheWidth: 96,
                               cacheHeight: 96,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (_, _, _) => Container(
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
@@ -138,16 +155,19 @@ class DocumentsScreen extends StatelessWidget {
                         '${pet?.name ?? ''} · ${_fmtDate(doc.createdAt)}'),
                     onTap: isImage
                         ? () => _viewImage(context, doc)
-                        : () => ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text('doc_no_preview'.tr()))),
+                        : () => _openExternal(context, doc.filePath),
                     trailing: IconButton(
                       icon: const Icon(AppIcons.trash, size: 20),
                       tooltip: 'common_delete'.tr(),
                       onPressed: () async {
                         if (await confirmDelete(context)) {
-                          if (context.mounted && pet != null) {
+                          if (!context.mounted) return;
+                          if (pet != null) {
                             app.deleteDoc(pet, doc);
+                          } else {
+                            // Pet gone but the row survived — delete by raw
+                            // petId instead of abandoning an undeletable row.
+                            app.deleteOrphanDoc(doc);
                           }
                         }
                       },
@@ -170,13 +190,28 @@ class DocumentsScreen extends StatelessWidget {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => Scaffold(
         backgroundColor: Colors.black,
-        appBar: AppBar(backgroundColor: Colors.black87, foregroundColor: Colors.white),
+        appBar: AppBar(
+          backgroundColor: Colors.black87,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.open_in_new),
+              tooltip: 'doc_open_with'.tr(),
+              onPressed: () => _openExternal(context, doc.filePath),
+            ),
+          ],
+        ),
         body: Center(
           child: InteractiveViewer(
+            // Downscale decode to screen size: camera originals would
+            // otherwise decode full-res (memory spike + jank on open).
             child: Image.file(
               File(doc.filePath),
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
+              cacheWidth: (MediaQuery.of(context).size.width *
+                      MediaQuery.of(context).devicePixelRatio)
+                  .round(),
+              errorBuilder: (_, _, _) => const Icon(
                   AppIcons.triangleWarning,
                   size: 48,
                   color: Colors.white70),
@@ -187,14 +222,37 @@ class DocumentsScreen extends StatelessWidget {
     ));
   }
 
+  /// Open any vault file with the system's default app (PDF viewer,
+  /// gallery, Drive…). No in-app PDF engine — the OS handles it, and the
+  /// file stays safe in the vault either way.
+  Future<void> _openExternal(BuildContext context, String path) async {
+    // Async existence check — existsSync on the UI thread janks on slow
+    // storage, and the file may legitimately be gone.
+    if (!await File(path).exists()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('doc_open_failed'.tr())));
+      }
+      return;
+    }
+    final result = await OpenFilex.open(path);
+    if (result.type != ResultType.done && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('doc_open_failed'.tr())));
+    }
+  }
+
   bool _isImage(String path) {
     final lower = path.toLowerCase();
+    // HEIC/HEIF deliberately excluded: Flutter/Skia can't reliably decode
+    // them on Android, so they open externally instead of showing the
+    // warning icon in the in-app viewer.
     return lower.endsWith('.jpg') ||
         lower.endsWith('.jpeg') ||
         lower.endsWith('.png') ||
         lower.endsWith('.gif') ||
-        lower.endsWith('.heic') ||
-        lower.endsWith('.webp');
+        lower.endsWith('.webp') ||
+        lower.endsWith('.bmp');
   }
 
   String _fmtDate(DateTime d) => DateFormat.yMd().format(d);
